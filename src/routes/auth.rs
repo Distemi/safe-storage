@@ -1,37 +1,45 @@
+use actix_identity::Identity;
 use actix_web::{HttpResponse, web};
 
-use crate::DataBase;
+use crate::database::DataBase;
+use crate::routes::MessResponse;
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct LoginPost {
     login: String,
     password: String,
 }
 
-#[derive(Serialize)]
-pub struct LoginResponse {
-    successful: bool,
-    message: String,
-}
-
-#[post("/logout")]
-pub async fn login(form: web::Form<LoginPost>, db: web::Data<DataBase>) -> HttpResponse {
+#[post("/api/login")]
+pub async fn login(form: web::Json<LoginPost>, db: web::Data<DataBase>, identify: Identity) -> HttpResponse {
     let usr = db.find_user_by_login(&form.login);
+    if usr.is_err() {
+        return HttpResponse::InternalServerError()
+            .json(MessResponse {
+                successful: false,
+                message: String::from("Failed to get users"),
+            });
+    }
+    let usr = usr.unwrap();
     if usr.is_none() {
         return HttpResponse::NotFound()
-            .json(LoginResponse {
+            .json(MessResponse {
                 successful: false,
                 message: String::from("Login not exists"),
             });
     }
     let user = usr.unwrap();
-    if user.password != form.password {
+    if !user.password.eq(&form.password) {
         return HttpResponse::NotFound()
-            .json(LoginResponse {
+            .json(MessResponse {
                 successful: false,
                 message: String::from("Invalid password"),
             });
     }
+    identify.remember(user.login.clone());
     HttpResponse::Ok()
-        .body("OK")
+        .json(MessResponse {
+            successful: true,
+            message: String::from("Successful login!"),
+        })
 }

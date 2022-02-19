@@ -1,5 +1,10 @@
 ---
-cookie_key: 38YPIBzI5UgI68ItwIL15U8UUt4QuPyMEyLj3M58Z5iqlarBOE
+cookie_key: rJl4r5F01YAAsASAGnVa2ep3ueWQs0Iv2KeBGx2MpMGf979DzCpx3oECMq64vmkCqt0c5LRUGDuEcYaD2
 port: 8081
 host: 127.0.0.1
-users: []
+users:
+  - login: Admin
+    password: Admin
+    path: /
+    limit: 1024
+    admin: true

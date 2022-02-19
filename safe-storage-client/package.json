@@ -1,13 +1,15 @@
 {
   "name": "safe-storage-client",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "axios": "^0.26.0",
+    "pinia": "^2.0.11",
     "vue": "^3.2.25",
     "vue-router": "4"
   },

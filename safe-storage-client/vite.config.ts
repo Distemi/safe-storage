@@ -9,7 +9,8 @@ export default defineConfig({
             output: {
                 manualChunks: {
                     'pages': [
-                        './src/pages/Login'
+                        './src/pages/Login',
+                        './src/pages/Index'
                     ]
                 }
             }

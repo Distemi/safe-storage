@@ -5,11 +5,14 @@ extern crate serde;
 
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{App, HttpResponse, HttpServer, middleware, web};
+use actix_web::cookie::SameSite;
+use actix_web::cookie::time::Duration;
 
-use crate::database::DataBase;
+use crate::database::Config;
 
 pub mod database;
 pub mod routes;
+pub mod user;
 
 async fn error_404() -> HttpResponse {
     HttpResponse::NotFound().body("404 Not Found")
@@ -17,25 +20,30 @@ async fn error_404() -> HttpResponse {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let db = DataBase::load().unwrap_or_else(|e| {
+    let cfg = Config::load().unwrap_or_else(|e| {
         panic!("Failed to load config: {:?}", e);
     });
-    let host_address = db.get_host_address();
-    let cookie_key = db.cookie_key.clone();
+    let host_address = cfg.get_host_address();
+    let cookie_key = cfg.cookie_key.clone();
+    let db = web::Data::new(cfg.create_db());
     HttpServer::new(move || {
         App::new()
             .app_data(db.clone())
+            .app_data(web::JsonConfig::default().limit(1024 * 8))
             .wrap(middleware::NormalizePath::default())
             .wrap(middleware::Compress::default())
+            .wrap(middleware::Logger::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new((&cookie_key).as_ref())
-                    .name(cookie_key.clone())
-                    .secure(false),
+                    .name("safe-storage")
+                    .secure(false)
+                    .max_age(Duration::days(1))
+                    .same_site(SameSite::Lax),
             ))
-            .service(
-                web::resource("/api")
-            )
-            .service(services![routes::auth::login])
+            .service(services![
+                routes::auth::login,
+                routes::user_info::user_info
+            ])
             .default_service(
                 web::to(error_404)
             )
